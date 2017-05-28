@@ -35,6 +35,7 @@ var board = {
   board_y:     40, 
   snakes:      [],
   food:        [],
+  colour_bank: ["red","green","purple","brown","orange"],
   create_food: function(){
     if( this.food.length < 5 ){
       this.food.push({
@@ -43,50 +44,93 @@ var board = {
       });
     }
   },
-  create_snake: function(){
+  create_snake: function(index){
     var snake = { 
       cells:     [],
       direction: "right",
-      colour:    "red",
+      colour:    this.colour_bank[ index ],
     }
-    for( var i = 4;  i >= 0; i-- ){
-      snake.cells.push({x: i, y:0});
+    var random_y = Math.round(Math.random()*(this.board_y));
+    var random_x = Math.round(Math.random()*(this.board_x)/2);
+    for( var i = random_x;  i < random_x + 5; i++ ){
+      snake.cells.push({x: i, y: random_y});
     }
     return snake;
   },
   update: function(){
+    
+    var death_row = [];
+
+    // make snakes move
     for( var i = 0; i < this.snakes.length; i++ ){
-      var    snake = this.snakes[i];
-      var     head = snake.cells[ snake.cells.length - 1 ];
-      var new_head = {x: head.x, y: head.y };
+      var    snake   = this.snakes[i];
+      var     head   = snake.cells[ snake.cells.length - 1 ];
+      var new_head   = {x: head.x, y: head.y };
+      var snake_eats = false;
 
            if(snake.direction == "right"){ new_head.x++; }
       else if(snake.direction == "left" ){ new_head.x--; }
-      else if(snake.direction == "up"   ){ new_head.y++; }
-      else if(snake.direction == "down" ){ new_head.y--; }
+      else if(snake.direction == "up"   ){ new_head.y--; }
+      else if(snake.direction == "down" ){ new_head.y++; }
       snake.cells.push(new_head); 
 
-      if( new_head.x >= this.board_x || new_head.x < 0 ||   
-          new_head.y >= this.board_y || new_head.y < 0 ){
-        this.snakes[i] = this.create_snake();
+      for( var j = 0; j < this.food.length; j++ ){
+        if( this.do_cells_clash(this.food[j],new_head)){
+          snake_eats = true;
+          this.food.pop(j);
+        }
+      }
+      if(snake_eats == false ){ snake.cells.shift(); }
+    }
+
+    // marks snakes for killing
+    for( var i = 0; i < this.snakes.length; i++ ){
+
+      if( this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].x >= this.board_x || 
+          this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].x < 0             ||   
+          this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].y >= this.board_y || 
+          this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].y < 0               ){
+        death_row.push(i);
+        continue;
+      }
+
+      var head = this.snakes[i].cells[ this.snakes[i].cells.length - 1 ];
+      
+      for( var j = 0; j < this.snakes.length; j++ ){
+        for( var k = 0; k < this.snakes[j].cells.length; k++){
+          if( i == j && k == this.snakes[i].cells.length - 1 ){ continue;}
+          if( this.do_cells_clash(head, this.snakes[j].cells[k]) ){
+            death_row.push(i);
+          }
+        }
       }
     }
 
+    // kill of snakes
+    for( var i = 0; i < death_row.length; i++ ){
+      this.snakes[death_row[i]] = this.create_snake(death_row[i]);
+    }
 
+
+
+  },
+  do_cells_clash: function(cell_1,cell_2){
+    if( cell_1.x != cell_2.x ){ return false; }
+    if( cell_1.y != cell_2.y ){ return false; }
+    return true;
   },
   game_loop: function(){
     var t = this;
     setInterval(function(){t.update();}, 60);
-    setInterval(function(){t.create_food();}, 1000);
+    setInterval(function(){t.create_food();}, 2000);
   }
 }
 
 board.game_loop();
 
 wss.on('connection', function(ws){
-  ws.snake = board.create_snake();  
-  board.snakes.push(ws.snake);
-  
+  ws.snake = board.snakes.length;  
+  board.snakes.push(board.create_snake(ws.snake));
 
   var update_client = setInterval(function(){
     var message = JSON.stringify({ snakes: board.snakes, food: board.food });
@@ -98,11 +142,12 @@ wss.on('connection', function(ws){
     clearInterval(update_client);
   });
   ws.on('message', function(message){
-      if( message == "left"  && ws.snake.direction == "right"){ return; }
-      if( message == "right" && ws.snake.direction == "left" ){ return; }
-      if( message == "down"  && ws.snake.direction == "up"   ){ return; }
-      if( message == "up"    && ws.snake.direction == "down" ){ return; }
-      ws.snake.direction = message;
+      if( message == "left"  && board.snakes[ws.snake].direction == "right"){ return; }
+      if( message == "right" && board.snakes[ws.snake].direction == "left" ){ return; }
+      if( message == "down"  && board.snakes[ws.snake].direction == "up"   ){ return; }
+      if( message == "up"    && board.snakes[ws.snake].direction == "down" ){ return; }
+      board.snakes[ws.snake].direction = message;
+      
   });
 
 
@@ -131,3 +176,5 @@ function simpleStringify (object){
     }
     return JSON.stringify(simpleObject); // returns cleaned up JSON
 };
+
+

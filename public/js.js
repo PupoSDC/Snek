@@ -58,7 +58,7 @@ var board = {
 		);
 	},
 	paint_snake: function(snake){
-		this.area.fillStyle   = "red";
+		this.area.fillStyle   = snake.colour;
 		this.area.strokeStyle = "white";
 		for( var i = 0; i < snake.cells.length; i++ ){
 			this.area.fillRect( 
