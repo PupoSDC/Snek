@@ -72,6 +72,11 @@ var board = {
       else if(snake.direction == "left" ){ new_head.x--; }
       else if(snake.direction == "up"   ){ new_head.y--; }
       else if(snake.direction == "down" ){ new_head.y++; }
+
+      if( new_head.x == 40 ){ new_head.x =  0 }
+      if( new_head.x == -1 ){ new_head.x = 39 }
+      if( new_head.y == 40 ){ new_head.y =  0 }
+      if( new_head.y == -1 ){ new_head.y = 39 } 
       snake.cells.push(new_head); 
 
       for( var j = 0; j < this.food.length; j++ ){
@@ -85,14 +90,6 @@ var board = {
 
     // marks snakes for killing
     for( var i = 0; i < this.snakes.length; i++ ){
-
-      if( this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].x >= this.board_x || 
-          this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].x < 0             ||   
-          this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].y >= this.board_y || 
-          this.snakes[i].cells[ this.snakes[i].cells.length - 1 ].y < 0               ){
-        death_row.push(i);
-        continue;
-      }
 
       var head = this.snakes[i].cells[ this.snakes[i].cells.length - 1 ];
       
