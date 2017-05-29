@@ -82,6 +82,7 @@ var board = {
 	}
 }
 
+
 board.game_loop();
 
 document.addEventListener("keydown",function(e){
@@ -93,6 +94,11 @@ document.addEventListener("keydown",function(e){
 		else if(key == "40"){ ws.send("down");	}
 	}	
 });
+
+document.getElementById("up").onclick    = function(e){ ws.send("up")    };
+document.getElementById("down").onclick  = function(e){ ws.send("down")  };
+document.getElementById("right").onclick = function(e){ ws.send("right") };
+document.getElementById("left").onclick  = function(e){ ws.send("left")  };
 
 ws.onmessage = function(event){ 
 	var obj = JSON.parse(event.data);

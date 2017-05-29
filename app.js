@@ -110,9 +110,6 @@ var board = {
     for( var i = 0; i < death_row.length; i++ ){
       this.snakes[death_row[i]] = this.create_snake(death_row[i]);
     }
-
-
-
   },
   do_cells_clash: function(cell_1,cell_2){
     if( cell_1.x != cell_2.x ){ return false; }
@@ -149,10 +146,6 @@ wss.on('connection', function(ws){
       board.snakes[ws.snake].direction = message;
       
   });
-
-
-
-
 });
 
 
