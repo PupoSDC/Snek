@@ -1,35 +1,16 @@
-const messages = document.querySelector('#messages');
-
-var ws = new WebSocket(`ws://${location.host}`);
-
-function showMessage(message){
-	messages.textContent += `\n${message}`;
-	messages.scrollTop = messages.scrollHeight;
-};
-
-function handleResponse(response){
-	return response.ok
-	  ? response.json().then( (data) => JSON.stringify(data, null, 2))
-	  : Promise.reject(new Error('Unexpected response'));
-};
-
-ws.onerror   = function(){ showMessage('WebSocket error');                  }; 
-ws.onopen    = function(){ showMessage('WebSocket connection established'); };
-ws.onclose   = function(){ showMessage('WebSocket connection closed');      };
-
 var board = {
 	area:          document.querySelector('#canvas').getContext("2d"),
 	snakes:        [],
 	food:          [],
-	canvas_width:  document.querySelector('#canvas').width,
-	canvas_height: document.querySelector('#canvas').height,
+	canvas_width:  document.querySelector('body').getBoundingClientRect().width,
+	canvas_height: document.querySelector('body').getBoundingClientRect().height,
 	width:         40,
 	height:        40,
 
 	update: function(){
 
-		this.area.fillStyle   = "white";
-		this.area.strokeStyle = "black";
+		this.area.fillStyle     = "white";
+		this.area.strokeStyle   = "black";
 		this.area.fillRect(0, 0,   this.canvas_width, this.canvas_height);
 		this.area.strokeRect(0, 0, this.canvas_width, this.canvas_height);
 		
@@ -74,16 +55,26 @@ var board = {
 				this.canvas_width  / this.width
 			);			
 		}
-
 	},
 	game_loop: function(){
 		var t = this;
  		setInterval(function(){t.update();}, 100);
+	},
+	resize: function(){
+		var d = document.querySelector('body').getBoundingClientRect();
+		this.area.canvas.width  = d.width;
+		this.area.canvas.height = d.height;
+
+		var size = d.width <= d.height ? d.width : size = d.height;
+
+		this.canvas_width       = size;
+		this.canvas_height      = size;
+		this.area.canvas.width  = size; 
+		this.area.canvas.height = size;
 	}
 }
 
-
-board.game_loop();
+window.onresize = function(event) { board.resize(); };
 
 document.addEventListener("keydown",function(e){
 	if(ws) {
@@ -95,15 +86,18 @@ document.addEventListener("keydown",function(e){
 	}	
 });
 
-document.getElementById("up").onclick    = function(e){ ws.send("up")    };
-document.getElementById("down").onclick  = function(e){ ws.send("down")  };
-document.getElementById("right").onclick = function(e){ ws.send("right") };
-document.getElementById("left").onclick  = function(e){ ws.send("left")  };
+var ws = new WebSocket(`ws://${location.host}`);
 
+ws.onerror   = function(){ console.log('WebSocket error');                  }; 
+ws.onopen    = function(){ console.log('WebSocket connection established'); };
+ws.onclose   = function(){ console.log('WebSocket connection closed');      };
 ws.onmessage = function(event){ 
 	var obj = JSON.parse(event.data);
 	board.snakes = obj.snakes;
 	board.food   = obj.food;
-	board.update();
-	console.log(event.data)                   
+	board.update();               
 };
+
+// start game
+board.resize();
+board.game_loop();
